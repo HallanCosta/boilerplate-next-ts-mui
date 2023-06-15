@@ -243,7 +243,7 @@ export default function Home() {
     }
 
     const id = "id" + Math.random().toString(16).slice(2);
-    console.log('uniqueId:', uniqueId);
+    console.log('uniqueId:', id);
 
     setItems([
       ...items, 
