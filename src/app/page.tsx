@@ -1,23 +1,26 @@
 "use client"
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import Backdrop from '@mui/material/Backdrop';
-import { useSpring, animated } from '@react-spring/web';
 import styled from '@emotion/styled';
 
 import { green } from '@mui/material/colors';
-import Modal from '@mui/material/Modal';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import TextField from '@mui/material/TextField';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import Fade from '@mui/material/Fade';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Modal from '@mui/material/Modal';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import Paper, { PaperProps } from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
+import Carousel from 'react-material-ui-carousel';
+import { ModalAlert, RefProps as  ModalAlertRefProps } from '@/components/organism/ModalAlert';
 
 const styleModalTodoList = {
   position: 'absolute' as 'absolute',
@@ -41,13 +44,6 @@ const styleModalTodoSave = {
   p: 4,
   backgroundColor: '#18181B',
   borderRadius: '16px'
-};
-
-const styleModalMessage = {
-  position: 'absolute' as 'absolute',
-  top: '5%',
-  right: '2%',
-  transform: 'translate(0%, -50%)',
 };
 
 const CssItemTodoSave = styled(TextField)({
@@ -92,98 +88,61 @@ const buttonWhiteColor = {
   }
 }
 
-interface FadeProps {
-  children: React.ReactElement;
-  in?: boolean;
-  onClick?: any;
-  onEnter?: (node: HTMLElement, isAppearing: boolean) => void;
-  onExited?: (node: HTMLElement, isAppearing: boolean) => void;
-  ownerState?: any;
-}
-
-const Fade = React.forwardRef<HTMLDivElement, FadeProps>(function Fade(props, ref) {
-  const {
-    children,
-    in: open,
-    onClick,
-    onEnter,
-    onExited,
-    ownerState,
-    ...other
-  } = props;
-  const style = useSpring({
-    from: { opacity: 0 },
-    to: { opacity: open ? 1 : 0 },
-    onStart: () => {
-      if (open && onEnter) {
-        onEnter(null as any, true);
-      }
-    },
-    onRest: () => {
-      if (!open && onExited) {
-        onExited(null as any, true);
-      }
-    },
-  });
-
-  return (
-    <animated.div ref={ref} style={style} {...other}>
-      {React.cloneElement(children, { onClick })}
-    </animated.div>
-  );
-});
+/* const style = {
+  position: 'absolute' as 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  width: 400,
+  bgcolor: 'background.paper',
+  border: '2px solid #000',
+  boxShadow: 24,
+  p: 4,
+}; */
 
 type TodoItemProps = {
-  id: string;
+  id: number;
+  name: string;
   render: () => JSX.Element;
 }
+
+type CarouselItemProps = PaperProps & {
+  name: string;
+  description: string;
+}
+
+let countItems = 0;
 
 export default function Home() {
   const [openTodoList, setOpenTodoList] = useState(false);
   const [openTodoSave, setOpenTodoSave] = useState(false);
-  const [openMessageSaveItem, setOpenMessageSaveItem] = useState(false);
-  const [openMessageErrorItem, setOpenMessageErrorItem] = useState(false);
   const [name, setName] = useState('');
   const [items, setItems] = useState([] as TodoItemProps[]);
 
+  const modalAlertSuccessRef = useRef<ModalAlertRefProps>({} as ModalAlertRefProps);
+  const modalAlertWarningRef = useRef<ModalAlertRefProps>({} as ModalAlertRefProps);
+ 
   const label = { inputProps: { 'aria-label': 'Checkbox demo' } };
 
-  /* const items = [
+  const carouselItems = [
     {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Pera" />
+      name: "Random Name #1",
+      description: "Probably the most random thing you have ever seen!"
     },
     {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Maça" />
+      name: "Random Name #2",
+      description: "Hello World!"
     },
     {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Bolocha" />
+      name: "Random Name #3",
+      description: "ASDASDASDASD"
     },
     {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Biscoito" />
-    },
-    {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Contra Filé" />
-    },
-    {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Linguiça Toscana" />
-    },
-    {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Arroz" />
-    },
-    {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Feijão" />
-    },
-    {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Laranja" />
-    },
-    {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Coca-Cola" />
-    },
-    {
-      render: () => <FormControlLabel control={<Checkbox {...label} sx={checkboxCheckedColor} />} label="Gelatina" />
+      name: "Random Name #4",
+      description: "random name 4"
     }
-  ]; */
-  
+  ];
+
   function handleOpenTodoList() {
     setOpenTodoList(true);
   }
@@ -200,60 +159,29 @@ export default function Home() {
     setOpenTodoSave(false);
   }
   
-  function handleOpenMessageSaveItem() {
-    setOpenMessageSaveItem(true);
-  }
-
-  function handleCloseMessageSaveItem() {
-    setOpenMessageSaveItem(false);
-  }
-
-  function handleOpenMessageErrorItem() {
-    setOpenMessageErrorItem(true);
-  }
-
-  function handleCloseMessageErrorItem() {
-    setOpenMessageErrorItem(false);
-  }
-
-  function handleRemoveItem(id: string) {
+  function handleRemoveItem(id: number) {
     console.log('> Remove Item')
-
-    console.log('id:',id);
-    console.log('items before:',items);
-    items.map(function(item, i) {
-      console.log('item.id:',item.id);
-      if (id == item.id) {
-        items.slice(i, 1);
-
-        setItems([
-          ...items
-        ]);
-      }
-    });
-    console.log('items before:',items);
-
+    setItems(items.filter(item => item.id !== id));
   }
 
   function handleAddNewItem() {
     if (!name) {
-      handleOpenMessageErrorItem();
-      setTimeout(() => { handleCloseMessageErrorItem() }, 1000);
+      modalAlertWarningRef.current.openModal();
+      setTimeout(() => { modalAlertWarningRef.current.closeModal() }, 1000);
       return;
     }
-
-    const id = "id" + Math.random().toString(16).slice(2);
-    console.log('uniqueId:', id);
+    const id = countItems++;
 
     setItems([
       ...items, 
       {
         id,
+        name,
         render: () => (
-          <Box key={id} className="flex flex-row justify-between w-full items-center overflow-x-hidden pr-[12px]">
+          <Box key={id.toString()} className="flex flex-row justify-between w-full items-center overflow-x-hidden pr-[12px]">
             <FormControlLabel className="w-full" control={<Checkbox {...label} sx={checkboxCheckedColor} />} label={name} />
             <Button className="cursor-pointer min-w-0 p-0" onClick={() => handleRemoveItem(id)}>
-              <DeleteIcon />
+              <DeleteIcon sx={{ color: '#fff' }} />
             </Button>
           </Box>
         )
@@ -261,8 +189,21 @@ export default function Home() {
     ]);
 
     setName('');
-    handleOpenMessageSaveItem();
-    setTimeout(() => { handleCloseMessageSaveItem() }, 1000);
+    modalAlertSuccessRef.current.openModal();
+    setTimeout(() => { modalAlertSuccessRef.current.closeModal() }, 1000);
+  }
+
+  const CarouselItem = ({ name, description }: CarouselItemProps) => {
+    return (
+      <Paper className="px-[50px] py-[20px] h-full">
+          <Typography variant="h5" fontWeight="bold" component="h2">{name}</Typography>
+          <Typography variant="h6" component="p">{description}</Typography>
+
+          <Button className="CheckButton">
+              Check it out!
+          </Button>
+      </Paper>
+    );
   }
 
   return (
@@ -279,7 +220,7 @@ export default function Home() {
           slots={{ backdrop: Backdrop }}
           slotProps={{
             backdrop: {
-              TransitionComponent: Fade,
+              timeout: 500,
             },
           }}
         >
@@ -293,7 +234,14 @@ export default function Home() {
               </Typography>
 
               <Box className="flex flex-col items-start mt-8 overflow-y-scroll max-h-[380px] modal-scrollbar">
-                {items.map(item => item.render())}
+                {items.map(item => (
+                  <Box key={item.id} className="flex flex-row justify-between w-full items-center overflow-x-hidden pr-[12px]">
+                    <FormControlLabel className="w-full" control={<Checkbox {...label} sx={checkboxCheckedColor} />} label={item.name} />
+                    <Button className="cursor-pointer min-w-0 p-0" onClick={() => handleRemoveItem(item.id)}>
+                      <DeleteIcon sx={{ color: '#fff' }} />
+                    </Button>
+                  </Box>
+                ))}
               </Box>
 
               <Box className="flex flex-row w-full justify-end mt-6">
@@ -304,40 +252,44 @@ export default function Home() {
               <Modal
                 open={openTodoSave}
                 onClose={handleCloseTodoSave}
+                closeAfterTransition
+                slots={{ backdrop: Backdrop }}
+                slotProps={{
+                  backdrop: {
+                    timeout: 500,
+                  },
+                }}
               >
-                <Box sx={styleModalTodoSave} className="flex flex-col gap-[10px]">
-                  <CssItemTodoSave fullWidth id="outlined-basic" label="Name" variant="outlined" value={name} onChange={e => setName(e.target.value)} />
+                <Fade in={openTodoSave}>
+                  <Box sx={styleModalTodoSave} className="flex flex-col gap-[10px]">
+                    <CssItemTodoSave fullWidth id="outlined-basic" label="Name" variant="outlined" value={name} onChange={e => setName(e.target.value)} />
 
-                  <Box className="flex flex-row w-full justify-end mt-3">
-                    <Button className="bg-green-700 p-[8px] w-full capitalize" variant="contained" color="success" onClick={handleAddNewItem}>
-                      Save
-                    </Button>
+                    <Box className="flex flex-row w-full justify-end mt-3">
+                      <Button className="bg-green-700 p-[8px] w-full capitalize" variant="contained" color="success" onClick={handleAddNewItem}>
+                        Save
+                      </Button>
+                    </Box>
                   </Box>
-                </Box>
+                </Fade>
               </Modal>
             </Box>
           </Fade>
         </Modal>
       </div>
 
-      {/* Modals Messages*/}
-      <Modal
-          open={openMessageSaveItem}
-          onClose={handleCloseMessageSaveItem}
-        >
-          <Box sx={styleModalMessage}>
-            <Alert severity="success">Item saved</Alert>
-          </Box>
-        </Modal>
+      <Carousel 
+        className="flex flex-col w-full max-w-[400px]" 
+        autoPlay={false} 
+        height={200}
+        navButtonsAlwaysVisible={true} 
+        indicators={true}
+        animation="fade"
+      >
+        {carouselItems.map((item, i) => <CarouselItem key={i} name={item.name} description={item.description} />)}
+      </Carousel>
 
-        <Modal
-          open={openMessageErrorItem}
-          onClose={handleCloseTodoList}
-        >
-          <Box sx={styleModalMessage}>
-            <Alert severity="warning">Name is blank</Alert>
-          </Box>
-        </Modal>
+      <ModalAlert ref={modalAlertSuccessRef} severity="success" title="Item saved" />
+      <ModalAlert ref={modalAlertWarningRef} severity="warning" title="Name is blank" />
     </main>
   )
 }
